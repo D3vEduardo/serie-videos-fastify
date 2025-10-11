@@ -1,5 +1,8 @@
 # env files
 .env
 
+# certificates
+/.certs
+
 # node_modules
 /node_modules

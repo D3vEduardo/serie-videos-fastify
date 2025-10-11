@@ -1,19 +1,23 @@
 import { fastify } from "fastify";
-import { env } from "./env";
+import {
+  serializerCompiler,
+  validatorCompiler,
+  ZodTypeProvider,
+} from "fastify-type-provider-zod";
+import { App } from "./app";
 
 const server = fastify();
+
+server.withTypeProvider<ZodTypeProvider>();
+server.setSerializerCompiler(serializerCompiler);
+server.setValidatorCompiler(validatorCompiler);
 
 server.get("/", async (_request, response) => {
   return response.send("Hello World!");
 });
 
-server.listen(
-  {
-    port: env.PORT,
-    host: env.HOST,
-  },
-  (err, address) => {
-    if (err) console.error(err);
-    else console.log(`Server listening at ${address}`);
-  }
-);
+const app = new App(server);
+
+app.registerRoutes();
+
+app.start();
