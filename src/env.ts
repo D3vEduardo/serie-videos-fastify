@@ -6,4 +6,10 @@ const envSchema = z.object({
   MONGODB_URI: z.string(),
 });
 
-export const env = envSchema.parse(process.env);
+export const env = envSchema.parse({
+  ...process.env,
+  MONGODB_URI:
+    process.env.NODE_ENV === "test"
+      ? "http://localhost:1234/test"
+      : process.env.MONGODB_URI,
+});

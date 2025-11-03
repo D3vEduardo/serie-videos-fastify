@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "start": "node build/server.js",
-    "dev": "tsx --env-file .env --watch src/server.ts"
+    "dev": "tsx --env-file .env --watch src/server.ts",
+    "test": "cross-env NODE_ENV=test poku src/tests"
   },
   "keywords": [],
   "author": "",
@@ -14,6 +15,8 @@
   "packageManager": "pnpm@10.12.4",
   "devDependencies": {
     "@types/node": "24",
+    "cross-env": "^10.1.0",
+    "poku": "^3.0.2",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   },
