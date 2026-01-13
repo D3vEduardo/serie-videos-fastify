@@ -125,9 +125,6 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: windows-latest
-    env:
-      SQUARECLOUD_APP_ID: ${{ secrets.SQUARECLOUD_APP_ID }}
-      SQUARECLOUD_TOKEN: ${{ secrets.SQUARECLOUD_TOKEN }}
     steps:
       # Download deployment package
       - name: Download Deployment Package
