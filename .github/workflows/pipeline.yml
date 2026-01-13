@@ -1,8 +1,9 @@
 name: CI/CD Pipeline
 on:
-  pull_request:
+  push:
     branches:
       - main
+  pull_request:
 jobs:
   test:
     runs-on: windows-latest
@@ -46,7 +47,8 @@ jobs:
       # Mount Certificate File
       - name: Mount Certificate File
         shell: pwsh
-        run: mkdir -Force .certs
+        run: |
+          mkdir -Force .certs
           [System.IO.File]::WriteAllBytes(".certs\certificate.pem", [Convert]::FromBase64String("$env:CLIENT_P12_B64"))
 
       # Run Tests
@@ -54,6 +56,7 @@ jobs:
         run: pnpm test
 
   build:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     env:
       NODE_ENV: test
       SQUARECLOUD_APP_ID: ${{ secrets.SQUARECLOUD_APP_ID }}
@@ -97,7 +100,8 @@ jobs:
       # Mount Certificate File
       - name: Mount Certificate File
         shell: pwsh
-        run: mkdir -Force .certs
+        run: |
+          mkdir -Force .certs
           [System.IO.File]::WriteAllBytes(".certs\certificate.pem", [Convert]::FromBase64String("$env:CLIENT_P12_B64"))
 
       # Build Application
