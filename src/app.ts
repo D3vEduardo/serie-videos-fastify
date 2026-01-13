@@ -16,7 +16,8 @@ export class App {
   }
 
   registerRoutes() {
-    usersRoute(this.server);
+    // usersRoute(this.server);
+    this.server.register(usersRoute);
     return this;
   }
 

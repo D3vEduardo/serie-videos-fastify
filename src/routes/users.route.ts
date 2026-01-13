@@ -4,6 +4,13 @@ import { userSchema } from "../models/user/user.type";
 import { UserModel } from "../models/user/user.model";
 
 export function usersRoute(server: FastifyTypedInstance) {
+  server.addHook("onRequest", async () => {
+    console.log("Route Scope Request Start:", new Date().toISOString());
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    console.log("- Route Scope");
+    console.log("Route Scope Request End:", new Date().toISOString());
+  });
+
   server.get(
     "/users",
     {
@@ -103,7 +110,9 @@ export function usersRoute(server: FastifyTypedInstance) {
     async (req, reply) => {
       try {
         const { id } = req.params;
-        const updatedUser = await UserModel.findByIdAndUpdate(id, req.body);
+        const updatedUser = await UserModel.findByIdAndUpdate(id, req.body, {
+          new: true,
+        });
         if (!updatedUser) {
           return reply.status(404).send({ message: "User not found" });
         }
