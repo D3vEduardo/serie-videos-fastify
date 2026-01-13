@@ -1,9 +1,11 @@
 name: CI/CD Pipeline
+
 on:
   push:
     branches:
       - main
   pull_request:
+
 jobs:
   test:
     runs-on: windows-latest
@@ -13,11 +15,9 @@ jobs:
       SQUARECLOUD_TOKEN: ${{ secrets.SQUARECLOUD_TOKEN }}
       CERTIFICATE_B64: ${{ secrets.CERTIFICATE_B64 }}
     steps:
-      # Checkout the repository
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Set up Node.js environment
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -27,6 +27,7 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           run_install: false
+
       - uses: actions/cache@v4
         with:
           path: ~/.pnpm-store
@@ -34,42 +35,36 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-
 
-      # Install dependencies
       - name: Install Dependencies
         run: pnpm install
 
-      # Mount .env file
       - name: Mount .env File
         shell: pwsh
         run: |
           $envContent | Out-File -Encoding UTF8 .env
 
-      # Mount Certificate File
       - name: Mount Certificate File
         shell: pwsh
         run: |
-          mkdir -Force .certs
-          [System.IO.File]::WriteAllBytes(".certs\certificate.pem", [Convert]::FromBase64String("$env:CERTIFICATE_B64"))
+          mkdir .certs -ea 0
+          [System.IO.File]::WriteAllBytes(".certs/certificate.pem", [Convert]::FromBase64String("$env:CERTIFICATE_B64"))
 
-      # Run Tests
       - name: Run Tests
         run: pnpm test
 
   build:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    needs: test
     env:
       NODE_ENV: test
       SQUARECLOUD_APP_ID: ${{ secrets.SQUARECLOUD_APP_ID }}
       SQUARECLOUD_TOKEN: ${{ secrets.SQUARECLOUD_TOKEN }}
       CERTIFICATE_B64: ${{ secrets.CERTIFICATE_B64 }}
-    runs-on: windows-latest
-    needs: test
     steps:
-      # Checkout the repository
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Set up Node.js environment
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -87,34 +82,28 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-
 
-      # Install dependencies
       - name: Install Dependencies
         run: pnpm install
 
-      # Mount .env file
       - name: Mount .env File
         shell: pwsh
         run: |
           $envContent | Out-File -Encoding UTF8 .env
 
-      # Mount Certificate File
       - name: Mount Certificate File
         shell: pwsh
         run: |
-          mkdir -Force .certs
-          [System.IO.File]::WriteAllBytes(".certs\certificate.pem", [Convert]::FromBase64String("$env:CERTIFICATE_B64"))
+          mkdir .certs -ea 0
+          [System.IO.File]::WriteAllBytes(".certs/certificate.pem", [Convert]::FromBase64String("$env:CERTIFICATE_B64"))
 
-      # Build Application
       - name: Build Application
         run: pnpm build
 
-      # Create deployment package (zip)
       - name: Create Deployment Package
         shell: pwsh
         run: |
           Compress-Archive -Path ./build, ./.certs, package.json, pnpm-lock.yaml, tsconfig.json -DestinationPath deploy.zip
 
-      # Upload zip artifact
       - name: Upload Deployment Package
         uses: actions/upload-artifact@v4
         with:
@@ -125,33 +114,30 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: windows-latest
+    env:
+      SQUARECLOUD_APP_ID: ${{ secrets.SQUARECLOUD_APP_ID }}
+      SQUARECLOUD_TOKEN: ${{ secrets.SQUARECLOUD_TOKEN }}
     steps:
-      # Download deployment package
       - name: Download Deployment Package
         uses: actions/download-artifact@v4
         with:
           name: deployment-package
 
-      # Extract deployment package
       - name: Extract Deployment Package
         shell: pwsh
         run: |
           Expand-Archive -Path deploy.zip -DestinationPath .
 
-      # Set up Node.js environment
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
 
-      # Install SquareCloud CLI
       - name: Install SquareCloud CLI
         run: npm install -g @squarecloud/cli
 
-      # Login in SquareCloud CLI
       - name: SquareCloud CLI Login
-        run: squarecloud auth login --token ${{ secrets.SQUARECLOUD_TOKEN }}
+        run: squarecloud auth login --token "${{ secrets.SQUARECLOUD_TOKEN }}"
 
-      # Deploy Application
       - name: Deploy to SquareCloud
         run: squarecloud app commit
