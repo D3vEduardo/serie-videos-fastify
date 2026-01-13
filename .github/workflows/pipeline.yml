@@ -49,7 +49,7 @@ jobs:
         shell: pwsh
         run: |
           mkdir -Force .certs
-          [System.IO.File]::WriteAllBytes(".certs\certificate.pem", [Convert]::FromBase64String("$env:CLIENT_P12_B64"))
+          [System.IO.File]::WriteAllBytes(".certs\certificate.pem", [Convert]::FromBase64String("$env:CERTIFICATE_B64"))
 
       # Run Tests
       - name: Run Tests
@@ -102,19 +102,59 @@ jobs:
         shell: pwsh
         run: |
           mkdir -Force .certs
-          [System.IO.File]::WriteAllBytes(".certs\certificate.pem", [Convert]::FromBase64String("$env:CLIENT_P12_B64"))
+          [System.IO.File]::WriteAllBytes(".certs\certificate.pem", [Convert]::FromBase64String("$env:CERTIFICATE_B64"))
 
       # Build Application
       - name: Build Application
         run: pnpm build
 
-      - name: Upload Build Artifact
+      # Create deployment package (zip)
+      - name: Create Deployment Package
+        shell: pwsh
+        run: |
+          Compress-Archive -Path ./build, ./.certs, package.json, pnpm-lock.yaml, tsconfig.json -DestinationPath deploy.zip
+
+      # Upload zip artifact
+      - name: Upload Deployment Package
         uses: actions/upload-artifact@v4
         with:
-          name: build-artifact
-          path: |
-            ./build
-            ./.certs
-            package.json
-            pnpm-lock.yaml
-            tsconfig.json
+          name: deployment-package
+          path: deploy.zip
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: windows-latest
+    env:
+      SQUARECLOUD_APP_ID: ${{ secrets.SQUARECLOUD_APP_ID }}
+      SQUARECLOUD_TOKEN: ${{ secrets.SQUARECLOUD_TOKEN }}
+    steps:
+      # Download deployment package
+      - name: Download Deployment Package
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-package
+
+      # Extract deployment package
+      - name: Extract Deployment Package
+        shell: pwsh
+        run: |
+          Expand-Archive -Path deploy.zip -DestinationPath .
+
+      # Set up Node.js environment
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # Install SquareCloud CLI
+      - name: Install SquareCloud CLI
+        run: npm install -g @squarecloud/cli
+
+      # Login in SquareCloud CLI
+      - name: SquareCloud CLI Login
+        run: squarecloud auth login --token ${{ secrets.SQUARECLOUD_TOKEN }}
+
+      # Deploy Application
+      - name: Deploy to SquareCloud
+        run: squarecloud app commit $appId -r
