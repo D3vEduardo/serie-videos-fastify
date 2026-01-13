@@ -62,7 +62,7 @@ jobs:
       SQUARECLOUD_APP_ID: ${{ secrets.SQUARECLOUD_APP_ID }}
       SQUARECLOUD_TOKEN: ${{ secrets.SQUARECLOUD_TOKEN }}
       CERTIFICATE_B64: ${{ secrets.CERTIFICATE_B64 }}
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     needs: test
     steps:
       # Checkout the repository
