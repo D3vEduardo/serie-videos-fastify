@@ -152,9 +152,7 @@ jobs:
         run: npm install -g @squarecloud/cli
 
       # Login in SquareCloud CLI
-      - name: SquareCloud CLI Login
-        run: squarecloud auth login --token ${{ secrets.SQUARECLOUD_TOKEN }}
-
-      # Deploy Application
-      - name: Deploy to SquareCloud
-        run: squarecloud app commit $appId -r
+      - name: SquareCloud CLI Login and Deploy
+        run: |
+          squarecloud auth login --token ${{ secrets.SQUARECLOUD_TOKEN }}
+          squarecloud app commit
