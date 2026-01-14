@@ -37,7 +37,7 @@ export class App {
   async start() {
     try {
       await connectToDatabase();
-
+      console.log("Versão com CI/CD");
       this.server.listen(
         {
           port: env.PORT,
