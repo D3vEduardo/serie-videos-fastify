@@ -47,6 +47,7 @@ jobs:
         run: pnpm test
 
   build:
+    needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: windows-latest
     env:
@@ -86,6 +87,7 @@ jobs:
       - name: Mount Certificate File
         shell: pwsh
         run: |
+          mkdir .certs -ea 0
           [System.IO.File]::WriteAllBytes(".certs/certificate.pem", [System.Convert]::FromBase64String($env:CERTIFICATE_B64))
 
       - name: Build project
