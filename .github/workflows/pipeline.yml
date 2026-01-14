@@ -45,3 +45,58 @@ jobs:
 
       - name: Run tests
         run: pnpm test
+
+  build:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    env:
+      NODE_ENV: production
+      SQUARECLOUD_APP_ID: ${{ secrets.SQUARECLOUD_APP_ID}}
+      SQUARECLOUD_TOKEN: ${{ secrets.SQUARECLOUD_TOKEN }}
+      CERTIFICATE_B64: ${{ secrets.CERTIFICATE_B64 }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Mount env File
+        shell: pwsh
+        run: |
+          $envContent | Out-File -Encoding UTF8 .env
+
+      - name: Mount Certificate File
+        shell: pwsh
+        run: |
+          [System.IO.File]::WriteAllBytes(".certs/certificate.pem", [System.Convert]::FromBase64String($env:CERTIFICATE_B64))
+
+      - name: Build project
+        run: pnpm build
+
+      - name: Create Deployment Package
+        run: |
+          Compress-Archive -Path ./build, ./.certs, package.json, pnpm-lock.yaml -DestinationPath deploy.zip
+
+      - name: Upload Deployment Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-package
+          path: deploy.zip
