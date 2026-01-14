@@ -140,4 +140,4 @@ jobs:
         run: squarecloud auth login --token "${{ secrets.SQUARECLOUD_TOKEN }}"
 
       - name: Deploy to SquareCloud
-        run: squarecloud app "${{ secrets.SQUARECLOUD_APP_ID }}" commit
+        run: squarecloud app commit "${{ secrets.SQUARECLOUD_APP_ID }}" -r
