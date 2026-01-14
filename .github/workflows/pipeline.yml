@@ -102,3 +102,34 @@ jobs:
         with:
           name: deployment-package
           path: deploy.zip
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: windows-latest
+    env:
+      SQUARECLOUD_APP_ID: ${{ secrets.SQUARECLOUD_APP_ID}}
+      SQUARECLOUD_TOKEN: ${{ secrets.SQUARECLOUD_TOKEN }}
+    steps:
+      - name: Download Deployment Package
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-package
+
+      - name: Extract Deployment Package
+        shell: pwsh
+        run: |
+          Expand-Archive -Path deploy.zip -DestinationPath .
+
+      - name: Set up NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install SquareCloud CLI
+        run: npm install -g @squarecloud/cli
+
+      - name: Login to SquareCloud
+        run: squarecloud auth login --token "${{ secrets.SQUARECLOUD_TOKEN }}"
+
+      - name: Deploy to SquareCloud
+        run: squarecloud app commit "${{ secrets.SQUARECLOUD_APP_ID }}" -r
